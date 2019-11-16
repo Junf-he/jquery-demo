@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<link rel="icon" href="img/favicon.ico" type="img/x-ico" />
+	<title>Image Magnifying Glass</title>
+	<!-- 放大镜的原理: 左边图片100%显示，右边图片200%显示并定位，定义两个图片框，将图片放入，图片超出相框部分隐藏，移动滑块，根据滑块的位置，计算出右边图片的定位，从而形成映射效果，即图片放大镜 -->
+	<style type="text/css">
+		body{
+			margin: 0px;
+			padding: 0px;
+		}
+
+		img{
+			display: block;
+		}
+
+		.leftcon{
+			width: 350px;
+			height: 350px;
+			margin: 100px 20px 0px 312px;
+			float: left;
+			position: relative;
+			box-shadow:3px 3px 10px 0 #111111; 
+            -webkit-box-shadow: 3px 3px 10px 0 #111111;  
+            -moz-box-shadow: 3px 3px 10px 0 #111111;	
+		}
+		.leftcon img{
+			width: 100%;
+			height: 100%;
+		}
+
+		.leftcon .slide_box{
+			display:none;
+            position:absolute;  
+            top:0;  
+            left:0;  
+            width:175px;  
+            height:175px;  
+            background:#000;  
+            opacity: 0.3;  
+            filter:alpha(opacity=30); 
+            cursor:move; 
+		}
+
+		.rightcon{
+			display: none; 
+			width: 350px;
+			height: 350px;
+			margin-top: 100px;
+			float: left;
+			overflow: hidden;
+			position: relative;
+		}
+
+		.rightcon img{
+			width: 200%;
+			height: 200%;
+			position: absolute;
+			left: 0px;
+			top: 0px;
+		}
+	</style>
+	
+</head>
+<body>
+	<div class="leftcon" id="left">
+		<img src="img/风景-1.jpg">
+		<div class="slide_box" id="box"></div>
+	</div>
+	<div class="rightcon" id="right">
+		<img src="img/风景-1.jpg">
+	</div>
+</body>
+<script>
+	var leftone = document.getElementById('left');
+	var rightone = document.getElementById('right');
+	var box = document.getElementById('box');
+	var rimg = rightone.getElementsByTagName("img")[0];
+	// Event是获取事件对象，对象代表事件的状态，比如事件在其中发生的元素、键盘按键的状态、鼠标的位置、鼠标按钮的状态,envet是windows的一个属性。
+	// 放大镜实现方法（获取右边图片定位）
+	function getPosition(e){  //这里的参数e就是代表event
+		//首先我们要去判断事件源,获取事件源,也就是e
+        var e=e||window.event;   //实现兼容
+        //理解：
+        //这个表达式写全是这样：var e=event?event||window.event;
+        //如果存在event,那么var e=event;而如果不存在event，那么var e=window.event.那么可以看出确实能实现兼容
+
+		var top = e.clientY-leftone.offsetTop-box.offsetHeight/2; 
+		var left = e.clientX-leftone.offsetLeft-box.offsetWidth/2;
+		//理解：
+		//e.clientY:返回事件触发时鼠标相对于元素视口的Y坐标。
+		//e.clientX:返回事件触发时鼠标相对于元素视口的X坐标。
+		//这里的元素视口实际上代指就是浏览器，clientX是鼠标距离浏览器左边框的距离，clientY是鼠标距离浏览器上边框的距离。
+		//offsetTop获取对象相对于版面或由offsetTop属性指定的父坐标的计算顶端位置。这里就是左边的div相对于body即浏览器窗口的纵向距离
+		//offsetLeft获取对象相对于版面或由offsetLeft属性指定的父坐标的计算顶端位置。这里就是左边的div相对于body即浏览器窗口的纵横向距离
+		//offsetHeight是对象的可见高度。这里是指小滑块的高度
+		//offsetHeight是对象的可见宽度。这里是指小滑块的宽度
+		//这里为什么除以2?是因为我们不除以2的话,事件源也就是鼠标就在这个小滑块的的右下角,并不美观
+        //我们要让鼠标位于滑块的中心,所以宽高各减去一半
+
+        //边界判断
+        var maxtop = leftone.offsetHeight - box.offsetHeight; //获取小滑块最大纵向移动距离
+        var maxleft = leftone.offsetWidth - box.offsetWidth;  //获取小滑块最大横向移动距离
+        var mintop = 0;  //获取小滑块最小纵向移动距离
+        var minleft = 0;  //获取小滑块最大纵向移动距离
+        var mvtop;  //定义小滑块的纵向移动距离
+        var mvleft;  //定义小滑块的横向移动距离
+        // 判断
+       	if (top<mintop) {  
+       		box.style.top = mintop + "px";  
+            mvtop = mintop;  
+            //理解：
+            //top是鼠标到浏览器的垂直距离-左边div顶部到浏览器的垂直距离-小滑块的高度的一半。那么现在鼠标在小滑块的中心，也就是说，top就等于小滑块的顶部到左边div的垂直距离
+            //那么，如果top<0,就是说小滑块和左边div顶部重合，就让小滑块的top值为0，即鼠标继续向上移动，小滑块不在移动，从而让小滑块的移动范围不能超过左边div的宽高范围
+            //下方同理
+       	}else if(top>maxtop){  
+            box.style.top = maxtop + "px";  
+            mvtop = maxtop;  
+            //如果top>maxtop,就是说小滑块和左边div底部重合，就让小滑块的top值为maxtop，即鼠标继续向下移动，小滑块不在移动，从而让小滑块的移动范围不能超过左边div的宽高范围
+        }else{  
+            box.style.top = top + "px";  
+            mvtop = top; 
+            //不超过边界，则小滑块的垂直移动距离就等于top,即小滑块的顶部到左边div的垂直距离 
+        }  
+        if(left<minleft){  
+            box.style.left = minleft + "px";  
+            mvleft = minleft  
+        }else if(left>maxleft){  
+            box.style.left = maxleft + "px";  
+            mvleft = maxleft  
+        }else{  
+            box.style.left = left + "px";  
+            mvleft = left;  
+        }  
+        //因为右边div的图片是左边div的图片的两倍,而左边div和右边div都是小滑块的宽高的两倍，而要让右边div放大左边的小滑块的包围图片，所以右边大图的定位坐标是小滑块的两倍，这样才能进行映射
+        //右侧图片跟着运动:左侧小滑块移动多少，右侧跟着移动他的2倍即可     
+        rimg.style.top = -mvtop*2 + "px";
+        rimg.style.left = -mvleft*2 + "px";
+	}
+
+	// 左侧盒子鼠标移入，小滑块和右侧图片显示,衔接鼠标移动效果
+	//onmouseenter 事件类似于 onmouseover 事件。 唯一的区别是 onmouseenter 事件不支持冒泡。
+	//该事件通常与 onmouseleave 事件一同使用。
+	leftone.onmouseenter = function(e){
+		var e=e||window.event; 
+		box.style.display = "block";  
+        getPosition(e);  
+        rightone.style.display = "block";   
+	}
+
+	//鼠标移动效果
+	leftone.onmousemove = function(e){
+		var e=e||window.event;
+        getPosition(e);   
+	}
+
+	//鼠标移出效果
+	leftone.onmouseleave = function(e){
+		var e=e||window.event; 
+        box.style.display = "none";  
+        rightone.style.display = "none";  
+	}
+</script>
+</html>
